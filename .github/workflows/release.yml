@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      
+      - name: Build CLI for multiple platforms
+        run: |
+          mkdir -p dist
+          
+          # Linux AMD64
+          cd cmd/poly2block
+          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ../../dist/poly2block-linux-amd64
+          
+          # Linux ARM64
+          GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o ../../dist/poly2block-linux-arm64
+          
+          # macOS AMD64
+          GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o ../../dist/poly2block-darwin-amd64
+          
+          # macOS ARM64
+          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o ../../dist/poly2block-darwin-arm64
+          
+          # Windows AMD64
+          GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o ../../dist/poly2block-windows-amd64.exe
+          
+          cd ../..
+      
+      - name: Build WASM
+        run: |
+          cd wasm
+          GOOS=js GOARCH=wasm go build -ldflags="-s -w" -o ../dist/poly2block.wasm
+          cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" ../dist/
+          cd ..
+      
+      - name: Generate vanilla palette
+        run: |
+          cd cmd/poly2block
+          go build -o poly2block
+          ./poly2block generate-palette --output ../../dist/vanilla-palette.msgpack
+          cd ../..
+      
+      - name: Create archives
+        run: |
+          cd dist
+          
+          # Linux AMD64
+          tar czf poly2block-linux-amd64.tar.gz poly2block-linux-amd64
+          
+          # Linux ARM64
+          tar czf poly2block-linux-arm64.tar.gz poly2block-linux-arm64
+          
+          # macOS AMD64
+          tar czf poly2block-darwin-amd64.tar.gz poly2block-darwin-amd64
+          
+          # macOS ARM64
+          tar czf poly2block-darwin-arm64.tar.gz poly2block-darwin-arm64
+          
+          # Windows AMD64
+          zip poly2block-windows-amd64.zip poly2block-windows-amd64.exe
+          
+          # WASM
+          zip poly2block-wasm.zip poly2block.wasm wasm_exec.js
+          
+          cd ..
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/vanilla-palette.msgpack
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
