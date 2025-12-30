@@ -1,0 +1,56 @@
+# poly2block/core
+
+Core algorithm library for converting polygon meshes to voxels and Minecraft schematics.
+
+## Features
+
+- **Generic Interfaces**: Pluggable implementations for mesh import, voxelization, and color matching
+- **Multiple Input Formats**: Support for OBJ+MTL and glTF
+- **Voxelization**: Configurable voxelization with multiple algorithms
+- **CIELAB Color Matching**: Perceptually accurate color matching using CIELAB color space
+- **Output Formats**: VOX (MagicaVoxel) and Minecraft schematic formats
+- **Error Diffusion Dithering**: Optional Floyd-Steinberg and other dithering algorithms
+- **Palette Generation**: Generate CIELAB color palettes for Minecraft blocks (msgpack format)
+
+## Architecture
+
+The library is built around generic interfaces to allow algorithm swapping:
+
+- `MeshImporter`: Import polygon meshes from various formats
+- `Voxelizer`: Convert meshes to voxel grids
+- `ColorMatcher`: Match colors to predefined palettes using CIELAB
+- `VOXExporter/Importer`: Handle MagicaVoxel format
+- `SchematicExporter/Importer`: Handle Minecraft schematic format
+
+## Usage
+
+```go
+import "github.com/billstark001/poly2block/core"
+
+// Create pipeline
+pipeline := &core.Pipeline{
+    Importer:  objImporter,    // Your mesh importer
+    Voxelizer: voxelizer,       // Your voxelization algorithm
+    Matcher:   colorMatcher,    // Your color matcher
+}
+
+// Configure
+config := core.PipelineConfig{
+    Voxelization: core.VoxelizationConfig{
+        Resolution: 128,
+        Conservative: true,
+    },
+    Dithering: core.DitherConfig{
+        Enabled: true,
+        Algorithm: "floyd-steinberg",
+    },
+    Palette: myPalette,
+}
+
+// Convert mesh to schematic
+err := pipeline.MeshToSchematic(meshReader, schematicWriter, config)
+```
+
+## License
+
+MIT
