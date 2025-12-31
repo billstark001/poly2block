@@ -75,6 +75,29 @@ Options:
 - `--vanilla`: Include vanilla Minecraft blocks (default: true)
 - `--custom`: Custom blocks definition file (JSON)
 
+### extract-palette
+
+Extract block colors from Minecraft resource pack or jar file by analyzing textures.
+
+```bash
+# Extract from resource pack (zip or directory)
+poly2block extract-palette \
+  --resource-pack path/to/resourcepack.zip \
+  --output custom.msgpack \
+  --export-json blocks.json
+
+# Extract from Minecraft jar file
+poly2block extract-palette \
+  --jar path/to/minecraft.jar \
+  --output vanilla.msgpack
+```
+
+Options:
+- `-o, --output`: Output palette file (default: palette.msgpack)
+- `--resource-pack`: Path to resource pack (zip or directory)
+- `--jar`: Path to Minecraft jar file
+- `--export-json`: Also export blocks as JSON file
+
 ### convert
 
 Alias for `mesh-to-schematic`.

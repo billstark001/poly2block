@@ -31,6 +31,7 @@ func init() {
 	rootCmd.AddCommand(voxToSchematicCmd)
 	rootCmd.AddCommand(meshToSchematicCmd)
 	rootCmd.AddCommand(generatePaletteCmd)
+	rootCmd.AddCommand(extractPaletteCmd)
 	rootCmd.AddCommand(convertCmd)
 }
 

@@ -11,6 +11,7 @@ Core algorithm library for converting polygon meshes to voxels and Minecraft sch
 - **Output Formats**: VOX (MagicaVoxel) and Minecraft schematic formats
 - **Error Diffusion Dithering**: Optional Floyd-Steinberg and other dithering algorithms
 - **Palette Generation**: Generate CIELAB color palettes for Minecraft blocks (msgpack format)
+- **Texture Extraction**: Extract block colors from Minecraft resource packs and jar files
 
 ## Architecture
 
@@ -24,14 +25,16 @@ The library is built around generic interfaces to allow algorithm swapping:
 
 ## Usage
 
+### Basic Pipeline
+
 ```go
 import "github.com/billstark001/poly2block/core"
 
 // Create pipeline
 pipeline := &core.Pipeline{
-    Importer:  objImporter,    // Your mesh importer
-    Voxelizer: voxelizer,       // Your voxelization algorithm
-    Matcher:   colorMatcher,    // Your color matcher
+    Importer:  core.NewGLTFImporter(),
+    Voxelizer: core.NewSurfaceVoxelizer(),
+    Matcher:   core.NewCIELABMatcher(palette),
 }
 
 // Configure
@@ -49,6 +52,42 @@ config := core.PipelineConfig{
 
 // Convert mesh to schematic
 err := pipeline.MeshToSchematic(meshReader, schematicWriter, config)
+```
+
+### Extracting Palettes from Resource Packs
+
+```go
+import "github.com/billstark001/poly2block/core"
+
+// Create texture extractor
+extractor := core.NewTextureExtractor()
+
+// Extract from resource pack (zip or directory)
+blocks, err := extractor.ExtractFromResourcePack("path/to/resourcepack.zip")
+if err != nil {
+    panic(err)
+}
+
+// Generate palette
+palette := core.GenerateMinecraftPalette(blocks)
+
+// Export to msgpack
+f, _ := os.Create("custom_palette.msgpack")
+defer f.Close()
+core.ExportPalette(palette, f)
+```
+
+### Working with Custom Block Definitions
+
+```go
+// Load blocks from JSON
+blocks, err := core.LoadBlocksFromJSON("blocks.json")
+
+// Generate palette
+palette := core.GenerateMinecraftPalette(blocks)
+
+// Save blocks back to JSON
+core.SaveBlocksToJSON(blocks, "modified_blocks.json")
 ```
 
 ## License
