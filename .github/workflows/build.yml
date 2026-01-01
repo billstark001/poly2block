@@ -1,0 +1,74 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      
+      - name: Test core library
+        run: |
+          cd core
+          go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./core/coverage.txt
+          flags: core
+
+  build-cli:
+    name: Build CLI
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      
+      - name: Build CLI
+        run: |
+          cd cmd/poly2block
+          go build -v -ldflags="-s -w" -o poly2block
+      
+      - name: Test CLI
+        run: |
+          cd cmd/poly2block
+          ./poly2block --version
+          ./poly2block --help
+
+  build-wasm:
+    name: Build WASM
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      
+      - name: Build WASM
+        run: |
+          cd wasm
+          GOOS=js GOARCH=wasm go build -o poly2block.wasm
+      
+      - name: Check WASM size
+        run: |
+          ls -lh wasm/poly2block.wasm
